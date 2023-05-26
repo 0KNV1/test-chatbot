@@ -1,129 +1,187 @@
 import numpy as np
 import random
 import json
+import pandas as pd
 
-import torch
-import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+# Import Libraries
+import json
+import nltk
+import time
+import random
+import string
+import pickle
+import numpy as np
+import pandas as pd
+from io import BytesIO
+import tensorflow as tf
+import IPython.display as ipd
+import matplotlib.pyplot as plt
+from nltk.stem import WordNetLemmatizer
+from tensorflow.keras.models import Model
+from keras.utils.vis_utils import plot_model
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.layers import Input, Embedding, LSTM
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.layers import Flatten, Dense
+# Importing the dataset
+with open('dedecorins.json') as content:
+  data1 = json.load(content)
 
-from nltk_utils import bag_of_words, tokenize, stem
-from model import NeuralNet
+# Mendapatkan semua data ke dalam list
+tags = [] # data tag
+inputs = [] # data input atau pattern
+responses = {} # data respon
+words = [] # Data kata 
+classes = [] # Data Kelas atau Tag
+documents = [] # Data Kalimat Dokumen
+ignore_words = ['?', '!'] # Mengabaikan tanda spesial karakter
 
-with open('intents.json', 'r') as f:
-    intents = json.load(f)
 
-all_words = []
-tags = []
-xy = []
-# loop through each sentence in our intents patterns
-for intent in intents['intents']:
-    tag = intent['tag']
-    # add to tag list
-    tags.append(tag)
+for intent in data1['intents']:
+  responses[intent['tag']]=intent['responses']
+  for lines in intent['patterns']:
+    inputs.append(lines)
+    tags.append(intent['tag'])
     for pattern in intent['patterns']:
-        # tokenize each word in the sentence
-        w = tokenize(pattern)
-        # add to our words list
-        all_words.extend(w)
-        # add to xy pair
-        xy.append((w, tag))
-
-# stem and lower each word
-ignore_words = ['?', '.', '!']
-all_words = [stem(w) for w in all_words if w not in ignore_words]
-# remove duplicates and sort
-all_words = sorted(set(all_words))
-tags = sorted(set(tags))
-
-print(len(xy), "patterns")
-print(len(tags), "tags:", tags)
-print(len(all_words), "unique stemmed words:", all_words)
-
-# create training data
-X_train = []
-y_train = []
-for (pattern_sentence, tag) in xy:
-    # X: bag of words for each pattern_sentence
-    bag = bag_of_words(pattern_sentence, all_words)
-    X_train.append(bag)
-    # y: PyTorch CrossEntropyLoss needs only class labels, not one-hot
-    label = tags.index(tag)
-    y_train.append(label)
-
-X_train = np.array(X_train)
-y_train = np.array(y_train)
-
-# Hyper-parameters 
-num_epochs = 1000
-batch_size = 8
-learning_rate = 0.001
-input_size = len(X_train[0])
-hidden_size = 8
-output_size = len(tags)
-print(input_size, output_size)
-
-class ChatDataset(Dataset):
-
-    def __init__(self):
-        self.n_samples = len(X_train)
-        self.x_data = X_train
-        self.y_data = y_train
-
-    # support indexing such that dataset[i] can be used to get i-th sample
-    def __getitem__(self, index):
-        return self.x_data[index], self.y_data[index]
-
-    # we can call len(dataset) to return the size
-    def __len__(self):
-        return self.n_samples
-
-dataset = ChatDataset()
-train_loader = DataLoader(dataset=dataset,
-                          batch_size=batch_size,
-                          shuffle=True,
-                          num_workers=0)
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-model = NeuralNet(input_size, hidden_size, output_size).to(device)
-
-# Loss and optimizer
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-# Train the model
-for epoch in range(num_epochs):
-    for (words, labels) in train_loader:
-        words = words.to(device)
-        labels = labels.to(dtype=torch.long).to(device)
+      w = nltk.word_tokenize(pattern)
+      words.extend(w)
+      documents.append((w, intent['tag']))
+      # add to our classes list
+      if intent['tag'] not in classes:
+        classes.append(intent['tag'])
         
-        # Forward pass
-        outputs = model(words)
-        # if y would be one-hot, we must apply
-        # labels = torch.max(labels, 1)[1]
-        loss = criterion(outputs, labels)
-        
-        # Backward and optimize
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        
-    if (epoch+1) % 100 == 0:
-        print (f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
 
+# Konversi data json ke dalam dataframe
+data = pd.DataFrame({"patterns":inputs, "tags":tags})
+data
 
-print(f'final loss: {loss.item():.4f}')
+# Removing Punctuations (Menghilangkan Punktuasi)
+data['patterns'] = data['patterns'].apply(lambda wrd:[ltrs.lower() for ltrs in wrd if ltrs not in string.punctuation])
+data['patterns'] = data['patterns'].apply(lambda wrd: ''.join(wrd))
+data
 
-data = {
-"model_state": model.state_dict(),
-"input_size": input_size,
-"hidden_size": hidden_size,
-"output_size": output_size,
-"all_words": all_words,
-"tags": tags
-}
+lemmatizer = WordNetLemmatizer()
+words = [lemmatizer.lemmatize(w.lower()) for w in words if w not in ignore_words]
+words = sorted(list(set(words)))
 
-FILE = "data.pth"
-torch.save(data, FILE)
+print(len(words), "unique lemmatized words", words)
 
-print(f'training complete. file saved to {FILE}')
+# sort classes
+classes = sorted(list(set(classes)))
+print(len(classes), "classes", classes)
+
+# documents = combination between patterns and intents
+print(len(documents), "documents")
+
+# Tokenize the data (Tokenisasi Data)
+tokenizer = Tokenizer(num_words=2000)
+tokenizer.fit_on_texts(data['patterns'])
+train = tokenizer.texts_to_sequences(data['patterns'])
+train
+
+# Apply padding 
+x_train = pad_sequences(train)
+
+# Encoding the outputs 
+le = LabelEncoder()
+y_train = le.fit_transform(data['tags'])
+
+print(x_train) # Padding Sequences
+print(y_train) #Label Encodings
+
+"""Tokenizer pada Tensorflow memberikan token unik untuk setiap kata yang berbeda. Dan juga padding dilakukan untuk mendapatkan semua data dengan panjang yang sama sehingga dapat mengirimkannya ke lapisan atau layer RNN. variabel target juga dikodekan menjadi nilai desimal.
+
+# **Input Length, Output Length and Vocabulary**
+"""
+
+# input length
+input_shape = x_train.shape[1]
+print(input_shape)
+
+# define vocabulary
+vocabulary = len(tokenizer.word_index)
+print("number of unique words : ", vocabulary)
+
+# output length
+output_length = le.classes_.shape[0]
+print("output length: ", output_length)
+
+"""**Input length** dan **output length** terlihat sangat jelas hasilnya. Mereka adalah untuk bentuk input dan bentuk output dari jaringan syaraf pada algoritma Neural Network.
+
+**Vocabulary Size** adalah untuk lapisan penyematan untuk membuat representasi vektor unik untuk setiap kata.
+
+# **Save Model Words & Classes**
+"""
+
+pickle.dump(words, open('words.pkl','wb'))
+pickle.dump(classes, open('classes.pkl','wb'))
+pickle.dump(tokenizer, open('tokenizer.pkl','wb'))
+
+"""# **Modeling**"""
+
+# Creating the model (Membuat Modeling)
+i = Input(shape=(input_shape,))
+x = Embedding(vocabulary+1,20)(i) # Layer Embedding
+x = LSTM(20, return_sequences=True)(x) # Layer Long Short Term Memory
+x = Flatten()(x) # Layer Flatten
+x = Dense(output_length, activation="softmax")(x) # Layer Dense
+model  = Model(i,x)
+
+# Compiling the model (Kompilasi Model)
+model.compile(loss="sparse_categorical_crossentropy", optimizer='adam', metrics=['accuracy'])
+
+# Training the model (Latih Model Data)
+train = model.fit(x_train, y_train, epochs=200)
+
+# Plotting model Accuracy and Loss (Visualisasi Plot Hasil Akurasi dan Loss)
+# Plot Akurasi
+plt.figure(figsize=(14, 5))
+plt.subplot(1, 2, 1)
+plt.plot(train.history['accuracy'],label='Training Set Accuracy')
+plt.legend(loc='lower right')
+plt.title('Accuracy')
+# Plot Loss
+plt.subplot(1, 2, 2)
+plt.plot(train.history['loss'],label='Training Set Loss')
+plt.legend(loc='upper right')
+plt.title('Loss')
+plt.show()
+
+# Membuat Input Chat
+while True:
+  texts_p = []
+  prediction_input = input('Kamu : ')
+  
+  # Menghapus punktuasi dan konversi ke huruf kecil
+  prediction_input = [letters.lower() for letters in prediction_input if letters not in string.punctuation]
+  prediction_input = ''.join(prediction_input)
+  texts_p.append(prediction_input)
+
+  # Tokenisasi dan Padding
+  prediction_input = tokenizer.texts_to_sequences(texts_p)
+  prediction_input = np.array(prediction_input).reshape(-1)
+  prediction_input = pad_sequences([prediction_input],input_shape)
+
+  # Mendapatkan hasil keluaran pada model 
+  output = model.predict(prediction_input)
+  output = output.argmax()
+
+  # Menemukan respon sesuai data tag dan memainkan voice bot
+  response_tag = le.inverse_transform([output])[0]
+  print("Dedecorins : ", random.choice(responses[response_tag]))
+  #tts = gTTS(random.choice(responses[response_tag]), lang='id')
+  #tts.save('Dedecorins.wav')
+  #time.sleep(0.08)
+  #ipd.display(ipd.Audio('Dedecorins.wav', autoplay=False))
+  print("="*60 + "\n")
+  tag=[]
+  if response_tag == "goodbye":
+    break
+  if response_tag == "abc":
+    print("Dedecorins : ", "Maaf saya tidak mengetahui pertanyaan anda")
+  
+model.save('chat_model.h5')
+
+print('Model Created Successfully!')
+
