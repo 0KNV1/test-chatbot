@@ -15,12 +15,12 @@ def home():
 def get_bot_response():
     user_input = str(request.args.get('msg'))
     result = generate_response(user_input)
-    return result
+    return jsonify (result)
 
-@app.post('/predict')
-def predict():
-    user_input = str(request.args.get('msg'))
-    result = generate_response(user_input)
-    return jsonify(result)
+# @app.post('/predict')
+# def predict():
+#     user_input = str(request.args.get('msg'))
+#     result = generate_response(user_input)
+#     return jsonify(result)
 if __name__ == "__main__":
     app.run(debug=True)

@@ -107,6 +107,13 @@ print("number of unique words : ", vocabulary)
 output_length = le.classes_.shape[0]
 print("output length: ", output_length)
 
+vector = tokenizer.texts_to_sequences(texts_p)
+vector = np.array(vector).reshape(-1)
+vector = pad_sequences([vector], input_shape)
+
+output = model.predict(vector)
+output = output.argmax()
+
 """**Input length** dan **output length** terlihat sangat jelas hasilnya. Mereka adalah untuk bentuk input dan bentuk output dari jaringan syaraf pada algoritma Neural Network.
 
 **Vocabulary Size** adalah untuk lapisan penyematan untuk membuat representasi vektor unik untuk setiap kata.
@@ -158,16 +165,16 @@ while True:
   prediction_input = ''.join(prediction_input)
   texts_p.append(prediction_input)
 
-  # Tokenisasi dan Padding
-  prediction_input = tokenizer.texts_to_sequences(texts_p)
-  prediction_input = np.array(prediction_input).reshape(-1)
-  prediction_input = pad_sequences([prediction_input],input_shape)
+  vector = tokenizer.texts_to_sequences(texts_p)
+  vector = np.array(vector).reshape(-1)
+  vector = pad_sequences([vector], input_shape)
 
-  # Mendapatkan hasil keluaran pada model 
-  output = model.predict(prediction_input)
+  output = model.predict(vector)
   output = output.argmax()
 
+
   # Menemukan respon sesuai data tag dan memainkan voice bot
+  
   response_tag = le.inverse_transform([output])[0]
   print("Dedecorins : ", random.choice(responses[response_tag]))
   #tts = gTTS(random.choice(responses[response_tag]), lang='id')

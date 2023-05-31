@@ -10,7 +10,13 @@ from tensorflow import keras
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 global responses, lemmatizer, tokenizer, le, model, input_shape
-input_shape = 10
+input_shape = 9
+tags = [] # data tag
+inputs = [] # data input atau pattern
+responses = {} # data respon
+words = [] # Data kata 
+documents = [] # Data Kalimat Dokumen
+classes = [] # Data Kelas atau Tag
 
 # import dataset answer
 def load_response():
@@ -20,7 +26,17 @@ def load_response():
         data = json.load(content)
     for intent in data['intents']:
         responses[intent['tag']]=intent['responses']
-
+        for lines in intent['patterns']:
+            inputs.append(lines)
+            tags.append(intent['tag'])
+        for pattern in intent['patterns']:
+            w = nltk.word_tokenize(pattern)
+            words.extend(w)
+            documents.append((w, intent['tag']))
+            # add to our classes list
+            if intent['tag'] not in classes:
+                classes.append(intent['tag'])
+  
 # import model dan download nltk file
 def preparation():
     load_response()
@@ -60,6 +76,7 @@ def predict(vector):
     output = model.predict(vector)
     output = output.argmax()
     response_tag = le.inverse_transform([output])[0]
+
     return response_tag
 
 # menghasilkan jawaban berdasarkan pertanyaan user

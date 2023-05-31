@@ -46,7 +46,7 @@ class Chatbox {
         let msg1 = { name: "User", message: text1 }
         this.messages.push(msg1);
 
-        fetch('http://127.0.0.1:5000/predict', {
+        $.get("/get", {
                 method: 'POST',
                 body: JSON.stringify({ message: text1 }),
                 mode: 'cors',
@@ -54,12 +54,20 @@ class Chatbox {
                     'Content-Type': 'application/json'
                 },
             })
-            .then(r => r.json())
+            .then(response => response.json())
             .then(r => {
                 let msg2 = { name: "Sam", message: r.answer };
                 this.messages.push(msg2);
                 this.updateChatText(chatbox)
                 textField.value = ''
+        // $.get("/get", { msg: chatbox }).done(function (data) {
+        //     console.log(rawText);
+        //     console.log(data);
+        //     const msgText = data;
+        //     let msg2 = { name: "Sam", message: msgText };
+        //     this.messages.push(msg2);
+        //     this.updateChatText(chatbox)
+        //     textField.value = ''
 
             }).catch((error) => {
                 console.error('Error:', error);
