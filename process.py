@@ -8,7 +8,7 @@ import tensorflow as tf
 from nltk.stem import WordNetLemmatizer
 from tensorflow import keras
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-
+from sklearn import preprocessing
 global responses, lemmatizer, tokenizer, le, model, input_shape
 input_shape = 9
 tags = [] # data tag
@@ -41,8 +41,12 @@ def load_response():
 def preparation():
     load_response()
     global lemmatizer, tokenizer, le, model
+    le = preprocessing.LabelEncoder()
+    pickle.dump(le, open('model/label_encoder.pkl', 'wb'))
+
+    le = preprocessing.LabelEncoder()
     tokenizer = pickle.load(open('model/tokenizer.pkl', 'rb'))
-    le = pickle.load(open('model/classes.pkl', 'rb'))
+    le = pickle.load(open('model/label_encoder.pkl', 'rb'))
     model = keras.models.load_model('model/chat_model.h5')
     lemmatizer = WordNetLemmatizer()
     nltk.download('punkt', quiet=True)
@@ -75,7 +79,9 @@ def vectorization(texts_p):
 def predict(vector):
     output = model.predict(vector)
     output = output.argmax()
-    response_tag = le.inverse_transform([output])[0]
+    
+    output = int(output)
+    response_tag = le.inverse_transform(output)
 
     return response_tag
 
