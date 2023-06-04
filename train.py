@@ -86,6 +86,7 @@ x_train = pad_sequences(train)
 # Encoding the outputs 
 le = LabelEncoder()
 y_train = le.fit_transform(data['tags'])
+# le.fit(y_train)
 
 
 print(x_train) # Padding Sequences
@@ -98,7 +99,7 @@ print(y_train) #Label Encodings
 
 # input length
 input_shape = x_train.shape[1]
-print(input_shape)
+print("input shape",input_shape)
 
 vector = tokenizer.texts_to_sequences(data)
 vector = np.array(vector).reshape(-1)
@@ -123,16 +124,18 @@ print("output length: ", output_length)
 # **Save Model Words & Classes**
 """
 
-pickle.dump(words, open('words.pkl','wb'))
-pickle.dump(classes, open('classes.pkl','wb'))
-pickle.dump(tokenizer, open('tokenizer.pkl','wb'))
+pickle.dump(words, open('model/words.pkl','wb'))
+pickle.dump(classes, open('model/classes.pkl','wb'))
+pickle.dump(tokenizer, open('model/tokenizer.pkl','wb'))
+pickle.dump(le, open('model/label_encoder.pkl','wb'))
 
 """# **Modeling**"""
 
 # Creating the model (Membuat Modeling)
 i = Input(shape=(input_shape,))
 x = Embedding(vocabulary+1,20)(i) # Layer Embedding
-x = LSTM(20, return_sequences=True)(x) # Layer Long Short Term Memory
+x = LSTM(20, return_sequences=True, recurrent_dropout=0.2)(x)
+x = LSTM(20, return_sequences=True, recurrent_dropout=0.2)(x) # Layer Long Short Term Memory
 x = Flatten()(x) # Layer Flatten
 x = Dense(output_length, activation="softmax")(x) # Layer Dense
 model  = Model(i,x)
@@ -157,40 +160,38 @@ train = model.fit(x_train, y_train, epochs=200)
 # plt.title('Loss')
 # plt.show()
 
+model.save('model/chat_model.h5')
 # Membuat Input Chat
-while True:
-  texts_p = []
-  prediction_input = input('Kamu : ')
+# while True:
+#   texts_p = []
+#   prediction_input = input('Kamu : ')
   
-  # Menghapus punktuasi dan konversi ke huruf kecil
-  prediction_input = [letters.lower() for letters in prediction_input if letters not in string.punctuation]
-  prediction_input = ''.join(prediction_input)
-  texts_p.append(prediction_input)
+#   # Menghapus punktuasi dan konversi ke huruf kecil
+#   prediction_input = [letters.lower() for letters in prediction_input if letters not in string.punctuation]
+#   prediction_input = ''.join(prediction_input)
+#   texts_p.append(prediction_input)
 
-  vector = tokenizer.texts_to_sequences(texts_p)
-  vector = np.array(vector).reshape(-1)
-  vector = pad_sequences([vector], input_shape)
+#   vector = tokenizer.texts_to_sequences(texts_p)
+#   vector = np.array(vector).reshape(-1)
+#   vector = pad_sequences([vector], input_shape)
 
-  output = model.predict(vector)
-  output = output.argmax()
-
-
+#   output = model.predict(vector)
+#   output = output.argmax()
   # Menemukan respon sesuai data tag dan memainkan voice bot
   
-  response_tag = le.inverse_transform([output])[0]
-  print("Dedecorins : ", random.choice(responses[response_tag]))
-  #tts = gTTS(random.choice(responses[response_tag]), lang='id')
-  #tts.save('Dedecorins.wav')
-  #time.sleep(0.08)
-  #ipd.display(ipd.Audio('Dedecorins.wav', autoplay=False))
-  print("="*60 + "\n")
-  tag=[]
-  if response_tag == "goodbye":
-    break
-  if response_tag == "abc":
-    print("Dedecorins : ", "Maaf saya tidak mengetahui pertanyaan anda")
-  
-model.save('chat_model.h5')
+  # response_tag = le.inverse_transform([output])[0]
+  # print("Dedecorins : ", random.choice(responses[response_tag]))
+  # #tts = gTTS(random.choice(responses[response_tag]), lang='id')
+  # #tts.save('Dedecorins.wav')
+  # #time.sleep(0.08)
+  # #ipd.display(ipd.Audio('Dedecorins.wav', autoplay=False))
+  # print("="*60 + "\n")
+  # tag=[]
+  # if response_tag == "goodbye":
+  #   break
+  # if response_tag == "abc":
+  #   print("Dedecorins : ", "Maaf saya tidak mengetahui pertanyaan anda")
 
-print('Model Created Successfully!')
+
+
 

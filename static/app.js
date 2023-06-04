@@ -37,43 +37,36 @@ class Chatbox {
     }
 
     onSendButton(chatbox) {
-        var textField = chatbox.querySelector('input');
-        let text1 = textField.value
-        if (text1 === "") {
-            return;
-        }
+        let msg = document.getElementById("text_input").value
 
-        let msg1 = { name: "User", message: text1 }
-        this.messages.push(msg1);
+        $.post("/get", {
+                method: 'POST',
+                body: JSON.stringify({ msg: msg }),
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(e => console.log(e))
+            .then(r => {
+                let msg2 = { name: "Sam", message: r.answer };
+                this.messages.push(msg2);
+                this.updateChatText(chatbox)
+                textField.value = ''
+                    // $.get("/get", { msg: chatbox }).done(function(data) {
+                    //     console.log(rawText);
+                    //     console.log(data);
+                    //     const msgText = data;
+                    //     let msg2 = { name: "Sam", message: msgText };
+                    //     this.messages.push(msg2);
+                    //     this.updateChatText(chatbox)
+                    //     textField.value = ''
 
-        // $.get("/get", {
-        //         method: 'POST',
-        //         body: JSON.stringify({ message: text1 }),
-        //         mode: 'cors',
-        //         headers: {
-        //             'Content-Type': 'application/json'
-        //         },
-        //     })
-        //     .then(response => response.json())
-        //     .then(r => {
-        //         let msg2 = { name: "Sam", message: r.answer };
-        //         this.messages.push(msg2);
-        //         this.updateChatText(chatbox)
-        //         textField.value = ''
-        $.get("/get", { msg: chatbox }).done(function(data) {
-            console.log(rawText);
-            console.log(data);
-            const msgText = data;
-            let msg2 = { name: "Sam", message: msgText };
-            this.messages.push(msg2);
-            this.updateChatText(chatbox)
-            textField.value = ''
-
-        }).catch((error) => {
-            console.error('Error:', error);
-            this.updateChatText(chatbox)
-            textField.value = ''
-        });
+            }).catch((error) => {
+                console.error('Error:', error);
+                this.updateChatText(chatbox)
+                textField.value = ''
+            });
     }
 
     updateChatText(chatbox) {
