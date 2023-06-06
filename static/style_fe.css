@@ -1,0 +1,87 @@
+body {
+  font-family: "Open Sans", sans-serif;
+}
+h5 {
+  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+  font-size: 25px;
+}
+p {
+  text-align: center;
+}
+#card-text {
+  font-family: "comic sans ms";
+  font-weight: 800;
+  font-size: 45px;
+  margin-bottom: 20px;
+  color: #000618;
+  width: 100%;
+  line-height: 50px;
+}
+h2 {
+  font-family: "comic sans ms";
+  font-weight: 800;
+  font-size: 45px;
+  margin-bottom: 20px;
+  color: #000618;
+  width: 100%;
+  line-height: 50px;
+}
+h3 {
+  font-family: "comic sans ms";
+  font-weight: 800;
+  font-size: 25px;
+  margin-bottom: 20px;
+  color: #364f6b;
+  width: 100%;
+  line-height: 50px;
+  text-align: center;
+}
+h4 {
+  font-family: "comic sans ms";
+  font-weight: 800;
+  font-size: 15px;
+  margin-bottom: 20px;
+  color: #1b334e;
+  width: 100%;
+  line-height: 50px;
+  text-align: center;
+}
+.jumbotron {
+  padding-top: 6rem;
+  background-color: rgb(0, 6, 24);
+  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+}
+.lead {
+  color: aliceblue;
+}
+
+.navbar-brand {
+  font-family: "Gill Sans";
+}
+
+#experience {
+  background-color: rgb(255, 255, 255);
+}
+
+section {
+  padding-top: 6rem;
+}
+
+#level {
+  background-color: #000618;
+}
+
+#produk {
+  background-color: #000618;
+}
+
+#material {
+  background-color: #fff;
+}
+
+#contact {
+  background-color: rgb(255, 255, 255);
+}
+footer {
+  background-color: #000618;
+}

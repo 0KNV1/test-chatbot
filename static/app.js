@@ -37,17 +37,21 @@ class Chatbox {
     }
 
     onSendButton(chatbox) {
+        var textField = chatbox.querySelector('input');
+        let text1 = textField.value;
+        if (text1 === '') {
+            return;
+        }
+        let msg1 = { name: "Customer", message: text1 };
+        this.messages.push(msg1);
         let msg = document.getElementById("text_input").value
 
-        $.post("/get", {
+        fetch($SCRIPT_ROOT +'/predict', {
                 method: 'POST',
-                body: JSON.stringify({ msg: msg }),
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                body: JSON.stringify({ message: text1 }),
+                headers: { 'Content-Type': 'application/json' },
             })
-            .then(e => console.log(e))
+            .then(r => r.json())
             .then(r => {
                 let msg2 = { name: "Sam", message: r.answer };
                 this.messages.push(msg2);
